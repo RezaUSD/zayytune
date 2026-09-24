@@ -1,0 +1,279 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #08090e;
+    color: #f1f2f8;
+  }
+  body {
+    overscroll-behavior: none;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+}
+
+/* 3D Glassmorphism Utilities */
+.glass-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.65), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+  box-shadow: 0 18px 45px -8px rgba(0, 0, 0, 0.7), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.25);
+}
+
+.glass-card-interactive {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.3s ease;
+}
+
+.glass-card-interactive:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.75), 0 0 25px -5px var(--primary);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.18);
+  transition: all 0.25s ease;
+}
+
+.glass-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.glass-inset {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* 3D Perspective Containers */
+.perspective-container {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Clean Modern Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Modern Equalizer Soundwave Bars */
+@keyframes eqPulse1 {
+  0%, 100% { height: 6px; }
+  50% { height: 22px; }
+}
+@keyframes eqPulse2 {
+  0%, 100% { height: 18px; }
+  50% { height: 7px; }
+}
+@keyframes eqPulse3 {
+  0%, 100% { height: 10px; }
+  50% { height: 26px; }
+}
+@keyframes eqPulse4 {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+
+.wave-bar-1 { animation: eqPulse1 0.75s ease-in-out infinite; }
+.wave-bar-2 { animation: eqPulse2 1.05s ease-in-out infinite; }
+.wave-bar-3 { animation: eqPulse3 0.85s ease-in-out infinite; }
+.wave-bar-4 { animation: eqPulse4 0.65s ease-in-out infinite; }
+
+/* 3D DVD / Vinyl Disc Rotation */
+@keyframes dvdSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dvd-spin {
+  animation: dvdSpin 8s linear infinite;
+}
+
+.dvd-paused {
+  animation-play-state: paused;
+}
+
+/* Authentic Vinyl High-Speed Spin from Design 2 */
+@keyframes spinVinyl {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vinyl-spin-33 {
+  animation: spinVinyl 1.8s linear infinite;
+}
+
+.vinyl-spin-45 {
+  animation: spinVinyl 1.33s linear infinite;
+}
+
+.vinyl-paused {
+  animation-play-state: paused !important;
+}
+
+/* Realistic Holographic Polycarbonate Iridescent Shimmer */
+.dvd-shimmer {
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.08) 0deg,
+    rgba(244, 114, 182, 0.28) 45deg,
+    rgba(96, 165, 250, 0.32) 90deg,
+    rgba(52, 211, 153, 0.28) 135deg,
+    rgba(255, 255, 255, 0.08) 180deg,
+    rgba(244, 114, 182, 0.28) 225deg,
+    rgba(96, 165, 250, 0.32) 270deg,
+    rgba(52, 211, 153, 0.28) 315deg,
+    rgba(255, 255, 255, 0.08) 360deg
+  );
+  mix-blend-mode: color-dodge;
+}
+
+/* Vinyl Authentic Microgroove Texture */
+.vinyl-grooves {
+  background: radial-gradient(
+    circle at center,
+    transparent 33%,
+    #1b1b20 33.5%,
+    #0b0b0e 34%,
+    #1e1e24 38%,
+    #0e0e12 39%,
+    #222228 44%,
+    #121215 45%,
+    #25252c 51%,
+    #0a0a0c 52%,
+    #1e1e23 58%,
+    #0f0f13 59%,
+    #23232a 66%,
+    #121215 67%,
+    #1a1a20 74%,
+    #0a0a0d 75%,
+    #282830 82%,
+    #141418 83%,
+    #22222a 90%,
+    #0d0d10 91%,
+    #1e1e24 96%,
+    #0b0b0e 97%
+  );
+}
+
+/* Vinyl Birefringence Sheen (Design 2) */
+.vinyl-sheen {
+  background: conic-gradient(
+    from 45deg at 50% 50%,
+    rgba(255, 255, 255, 0.18) 0deg,
+    transparent 55deg,
+    rgba(255, 255, 255, 0.02) 120deg,
+    rgba(255, 255, 255, 0.22) 180deg,
+    transparent 235deg,
+    rgba(255, 255, 255, 0.03) 300deg,
+    rgba(255, 255, 255, 0.18) 360deg
+  );
+  mix-blend-mode: screen;
+}
+
+/* Tonearm Transition Dynamics */
+.tonearm-wand {
+  transform-origin: 85% 12%;
+  transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mesh Gradient Glowing Orbs */
+.orb-glow-1 {
+  background: radial-gradient(circle, var(--primary) 0%, rgba(120, 90, 255, 0.15) 50%, transparent 75%);
+}
+
+.orb-glow-2 {
+  background: radial-gradient(circle, rgba(229, 37, 53, 0.35) 0%, rgba(168, 15, 34, 0.15) 50%, transparent 75%);
+}
+
+.orb-glow-3 {
+  background: radial-gradient(circle, rgba(229, 193, 137, 0.25) 0%, rgba(229, 37, 53, 0.1) 50%, transparent 75%);
+}
+
+/* Atmospheric Mesh Orb Float Animations */
+@keyframes meshFloat1 {
+  0%, 100% { transform: translate(-50%, 0) scale(1); }
+  50% { transform: translate(-50%, -24px) scale(1.06); }
+}
+@keyframes meshFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -18px) scale(1.04); }
+  66% { transform: translate(-10px, 10px) scale(0.96); }
+}
+
+.animate-mesh-float-1 {
+  animation: meshFloat1 8s ease-in-out infinite;
+}
+.animate-mesh-float-2 {
+  animation: meshFloat2 11s ease-in-out infinite;
+}
+
+/* Slow Spin for Logo Vinyl Icon */
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spinSlow 8s linear infinite;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Custom scrollbar for modals */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
