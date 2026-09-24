@@ -866,44 +866,38 @@ export default function MasterDeckHero({
           {/* 2. OVERLAY: ANTREAN & FAVORIT (Sleek Full-Bleed Sheet via Portal - z-[9999]) */}
           {mobileOverlay === 'queue' && typeof document !== 'undefined' && createPortal(
             <div className="fixed inset-0 z-[9999] flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
-              {/* Top Drag Handle Indicator with Touch Swipe */}
+              {/* Minimalist Top Drag Handle */}
               <div
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className="w-full flex flex-col items-center pt-3 pb-1 cursor-grab active:cursor-grabbing select-none shrink-0"
+                className="w-full flex justify-center pt-2.5 pb-1 select-none cursor-grab active:cursor-grabbing shrink-0"
               >
-                <div className="w-12 h-1.5 rounded-full bg-white/30" />
-                <span className="text-[10px] text-white/50 font-mono mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
-                  <span>Tarik ke bawah atau tekan kembali</span>
-                </span>
+                <div className="w-10 h-1 rounded-full bg-white/30" />
               </div>
 
-              {/* Sheet Header with Prominent Back Button */}
-              <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.08] shrink-0 bg-[#0c0a1f]">
+              {/* Clean 1-Row Navigation Bar */}
+              <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.08] shrink-0 bg-[#0c0a1f]/90 backdrop-blur-xl">
                 <button
                   type="button"
                   onClick={() => setMobileOverlay(null)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white active:scale-95 transition-all text-xs font-semibold cursor-pointer border border-white/10"
-                  title="Kembali ke Pemutar"
+                  className="w-9 h-9 rounded-full bg-white/[0.08] active:bg-white/[0.18] text-white flex items-center justify-center transition-all active:scale-90 cursor-pointer border border-white/10 shrink-0"
+                  title="Kembali"
                 >
-                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-                  <span>Kembali</span>
+                  <span className="material-symbols-outlined text-[24px]">keyboard_arrow_down</span>
                 </button>
 
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-white tracking-tight">Daftar Putar</h3>
+                  <h3 className="text-xs font-bold text-white tracking-tight">Daftar Putar</h3>
                   <span className="text-[10px] font-mono text-zinc-300 font-bold bg-white/[0.08] px-2 py-0.5 rounded-full border border-white/10">
                     {tracks.length}
                   </span>
                 </div>
 
-                {/* Circular Close Button */}
                 <button
                   type="button"
                   onClick={() => setMobileOverlay(null)}
-                  className="w-8 h-8 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-90"
+                  className="w-9 h-9 rounded-full bg-white/[0.08] active:bg-white/[0.18] text-white/70 active:text-white flex items-center justify-center transition-all active:scale-90 cursor-pointer border border-white/10 shrink-0"
                   title="Tutup antrean"
                 >
                   <span className="material-symbols-outlined text-[18px]">close</span>
@@ -1039,67 +1033,60 @@ export default function MasterDeckHero({
           {/* 3. OVERLAY: LIRIK KARAOKE (Sleek Full-Bleed Karaoke Sheet via Portal - z-[9999]) */}
           {mobileOverlay === 'lyrics' && typeof document !== 'undefined' && createPortal(
             <div className="fixed inset-0 z-[9999] flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
-              {/* Top Drag Handle Indicator with Touch Swipe */}
+              {/* Minimalist Top Drag Handle */}
               <div
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className="w-full flex flex-col items-center pt-3 pb-1 cursor-grab active:cursor-grabbing select-none shrink-0"
+                className="w-full flex justify-center pt-2.5 pb-1 select-none cursor-grab active:cursor-grabbing shrink-0"
               >
-                <div className="w-12 h-1.5 rounded-full bg-white/30" />
-                <span className="text-[10px] text-white/50 font-mono mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
-                  <span>Tarik ke bawah atau tekan kembali</span>
-                </span>
+                <div className="w-10 h-1 rounded-full bg-white/30" />
               </div>
 
-              {/* Sheet Header with Prominent Back Button */}
-              <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.08] shrink-0 bg-[#0c0a1f]">
+              {/* Single Sleek Top Bar (Spotify/Apple Music Standard) */}
+              <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.08] shrink-0 bg-[#0c0a1f]/90 backdrop-blur-xl">
+                {/* Left: Clean Down Chevron Button */}
                 <button
                   type="button"
                   onClick={() => setMobileOverlay(null)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white active:scale-95 transition-all text-xs font-semibold cursor-pointer border border-white/10"
-                  title="Kembali ke Pemutar Lagu"
+                  className="w-9 h-9 rounded-full bg-white/[0.08] active:bg-white/[0.18] text-white flex items-center justify-center transition-all active:scale-90 cursor-pointer border border-white/10 shrink-0"
+                  title="Kembali"
                 >
-                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-                  <span>Kembali</span>
+                  <span className="material-symbols-outlined text-[24px]">keyboard_arrow_down</span>
                 </button>
 
-                <div className="flex flex-col items-center text-center">
-                  <h3 className="text-xs font-bold text-white tracking-tight">
-                    {lyricsData?.isSynced ? 'Karaoke Live Synced' : 'Lirik Lagu'}
-                  </h3>
-                  <span className="text-[10px] font-mono text-indigo-300/80 uppercase">LRCLIB STUDIO</span>
+                {/* Center: Track Thumbnail & Title */}
+                <div className="flex items-center gap-2.5 min-w-0 max-w-[65%] px-2">
+                  <div className="w-8 h-8 rounded-lg overflow-hidden bg-black/40 border border-white/10 shrink-0 shadow-sm">
+                    <img
+                      src={currentTrack?.coverArtUrl || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'}
+                      alt={currentTrack?.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-col min-w-0 text-left">
+                    <span className="text-xs font-bold text-white truncate leading-tight">
+                      {currentTrack?.title || 'Memuat Trek'}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 truncate mt-0.5">
+                      {currentTrack?.artist || 'Artis Musik'}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Clean Circular Close Button */}
+                {/* Right: Close (X) Button */}
                 <button
                   type="button"
                   onClick={() => setMobileOverlay(null)}
-                  className="w-8 h-8 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-90"
+                  className="w-9 h-9 rounded-full bg-white/[0.08] active:bg-white/[0.18] text-white/70 active:text-white flex items-center justify-center transition-all active:scale-90 cursor-pointer border border-white/10 shrink-0"
                   title="Tutup lirik"
                 >
                   <span className="material-symbols-outlined text-[18px]">close</span>
                 </button>
-              </div>
-
-              {/* Track Info Bar */}
-              <div className="px-4 py-2 bg-white/[0.02] border-b border-white/[0.06] flex items-center gap-3 shrink-0">
-                <div className="w-10 h-10 rounded-lg overflow-hidden bg-black/40 border border-white/10 shrink-0">
-                  <img
-                    src={currentTrack?.coverArtUrl || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'}
-                    alt={currentTrack?.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'
-                    }}
-                  />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-semibold text-white truncate">{currentTrack?.title || 'Memuat Trek'}</span>
-                  <span className="text-[11px] text-zinc-400 truncate mt-0.5">{currentTrack?.artist || 'Artis Musik'}</span>
-                </div>
               </div>
 
               {/* Scrollable Lyrics Container with Pull-Down to Close */}
@@ -1113,7 +1100,7 @@ export default function MasterDeckHero({
                   }
                   handleTouchEnd()
                 }}
-                className="flex-1 overflow-y-auto no-scrollbar scroll-smooth px-6 py-6 space-y-5 select-text pb-32 [mask-image:linear-gradient(to_bottom,transparent_0%,black_8%,black_90%,transparent_100%)]"
+                className="flex-1 overflow-y-auto no-scrollbar scroll-smooth px-6 py-6 space-y-5 select-text pb-28 [mask-image:linear-gradient(to_bottom,transparent_0%,black_8%,black_90%,transparent_100%)]"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {loadingLyrics ? (
@@ -1152,18 +1139,6 @@ export default function MasterDeckHero({
                     </span>
                   </div>
                 )}
-              </div>
-
-              {/* Bottom Floating Quick Exit Button for Effortless Mobile Navigation */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
-                <button
-                  type="button"
-                  onClick={() => setMobileOverlay(null)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-xs shadow-[0_8px_25px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.5)] active:scale-95 transition-all border border-indigo-400/40 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
-                  <span>Tutup Lirik & Kembali</span>
-                </button>
               </div>
             </div>,
             document.body
