@@ -88,9 +88,9 @@ export default function SpotifyPlayerBar({
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 select-none bg-[#0d0b24]/95 backdrop-blur-2xl border-t border-indigo-500/20 shadow-[0_-10px_35px_rgba(0,0,0,0.8)]">
-      <div className="w-full px-2.5 sm:px-6 h-16 sm:h-[72px] flex items-center justify-between gap-1.5 sm:gap-4">
+      <div className="relative w-full px-3 sm:px-6 h-16 sm:h-[72px] flex items-center justify-between">
         {/* ====== LEFT: Track Info ====== */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-[34%] sm:w-[28%] shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-[28%] sm:w-[30%] shrink-0 z-10">
           {/* Album Thumbnail */}
           <div className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-lg flex-shrink-0 overflow-hidden border border-white/10 shadow-md bg-[#16171d]">
             {currentTrack?.coverArtUrl ? (
@@ -120,12 +120,12 @@ export default function SpotifyPlayerBar({
             </span>
           </div>
 
-          {/* Favorite Button */}
+          {/* Favorite Button (Large Screens) */}
           {currentTrack && (
             <button
               type="button"
               onClick={onToggleFavorite}
-              className={`p-1.5 rounded-lg flex-shrink-0 hidden sm:flex items-center justify-center transition-all ${
+              className={`p-1.5 rounded-lg flex-shrink-0 hidden lg:flex items-center justify-center transition-all ${
                 isFavorite ? 'text-rose-400' : 'text-white/30 hover:text-white'
               }`}
               title={isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
@@ -140,10 +140,10 @@ export default function SpotifyPlayerBar({
           )}
         </div>
 
-        {/* ====== CENTER: Playback Controls & Progress Scrubber ====== */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-1.5 max-w-xl mx-auto px-1 sm:px-2">
+        {/* ====== CENTER: Playback Controls & Progress Scrubber (Precisely Centered) ====== */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[44%] sm:w-[40%] max-w-xl flex flex-col items-center justify-center gap-1 sm:gap-1.5 z-10 pointer-events-auto">
           {/* Controls Row */}
-          <div className="flex items-center gap-2.5 sm:gap-5">
+          <div className="flex items-center gap-2 sm:gap-5 justify-center">
             <button
               type="button"
               onClick={onToggleShuffle}
@@ -158,7 +158,7 @@ export default function SpotifyPlayerBar({
             <button
               type="button"
               onClick={onPrev}
-              className="text-white/60 hover:text-white active:scale-90 transition-all p-1"
+              className="text-white/70 hover:text-white active:scale-90 transition-all p-1"
               title="Lagu Sebelumnya"
             >
               <span className="material-symbols-outlined text-[20px] sm:text-[22px]">skip_previous</span>
@@ -182,7 +182,7 @@ export default function SpotifyPlayerBar({
             <button
               type="button"
               onClick={onNext}
-              className="text-white/60 hover:text-white active:scale-90 transition-all p-1"
+              className="text-white/70 hover:text-white active:scale-90 transition-all p-1"
               title="Lagu Berikutnya"
             >
               <span className="material-symbols-outlined text-[20px] sm:text-[22px]">skip_next</span>
@@ -202,7 +202,7 @@ export default function SpotifyPlayerBar({
 
           {/* Clean Modern Scrubber Row */}
           <div className="w-full flex items-center gap-1.5 sm:gap-2.5 text-[9px] sm:text-[11px] font-mono text-white/40">
-            <span className="w-7 sm:w-9 text-right text-white/50 tabular-nums shrink-0 font-medium">
+            <span className="w-6 sm:w-8 text-right text-white/50 tabular-nums shrink-0 font-medium">
               {formatTime(currentTime)}
             </span>
 
@@ -210,7 +210,7 @@ export default function SpotifyPlayerBar({
             <div
               ref={progressBarRef}
               onClick={handleProgressClick}
-              className="relative flex-1 h-4 group flex items-center cursor-pointer"
+              className="relative flex-1 h-3 group flex items-center cursor-pointer"
             >
               <div className="h-1 w-full bg-white/15 rounded-full group-hover:h-1.5 transition-all overflow-hidden">
                 <div
@@ -220,92 +220,114 @@ export default function SpotifyPlayerBar({
               </div>
               <div
                 style={{ left: `${progressPercent}%` }}
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
               />
             </div>
 
-            <span className="w-7 sm:w-9 text-left text-white/50 tabular-nums shrink-0 font-medium">
+            <span className="w-6 sm:w-8 text-left text-white/50 tabular-nums shrink-0 font-medium">
               {formatTime(effectiveDuration)}
             </span>
           </div>
         </div>
 
-        {/* ====== RIGHT: Volume & Settings ====== */}
-        <div className="hidden sm:flex items-center gap-3 w-[28%] justify-end">
-          {/* Equalizer Modal Trigger */}
-          {onOpenEQ && (
-            <button
-              type="button"
-              onClick={onOpenEQ}
-              className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.06] transition-all"
-              title="Buka Pengaturan Equalizer"
-            >
-              <span className="material-symbols-outlined text-[18px]">equalizer</span>
-            </button>
-          )}
+        {/* ====== RIGHT: Volume & Settings (Desktop) + Volume & Like (Mobile) ====== */}
+        <div className="flex items-center justify-end gap-1.5 sm:gap-3 w-[28%] sm:w-[30%] shrink-0 z-10">
+          {/* Mobile Actions: Favorite & Mute */}
+          <div className="flex sm:hidden items-center gap-1">
+            {currentTrack && (
+              <button
+                type="button"
+                onClick={onToggleFavorite}
+                className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${
+                  isFavorite ? 'text-rose-400' : 'text-white/40 hover:text-white'
+                }`}
+                title={isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
+              >
+                <span
+                  className="material-symbols-outlined text-[19px]"
+                  style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                  favorite
+                </span>
+              </button>
+            )}
 
-          {/* Volume Control */}
-          <div className="flex items-center gap-2.5 group/vol">
             <button
               type="button"
               onClick={handleVolumeToggle}
-              className="text-white/45 hover:text-white transition-all flex items-center justify-center p-1 rounded-lg hover:bg-white/5 shrink-0"
+              className="text-white/50 hover:text-white transition-all p-1.5 rounded-lg active:scale-90"
               title={isMuted ? 'Nyalakan Suara' : 'Bisukan'}
             >
-              <span className="material-symbols-outlined text-[19px] leading-none block">
-                {volume === 0 || isMuted ? 'volume_off' : volume < 0.4 ? 'volume_down' : 'volume_up'}
+              <span className="material-symbols-outlined text-[20px]">
+                {volume === 0 || isMuted ? 'volume_off' : 'volume_up'}
               </span>
             </button>
+          </div>
 
-            {/* Volume Slider with Full Drag Support */}
-            <div
-              ref={volumeBarRef}
-              onMouseDown={handleVolumeMouseDown}
-              className="relative w-20 sm:w-24 h-5 flex items-center cursor-pointer select-none"
-            >
-              <div className="h-1 w-full bg-white/15 rounded-full group-hover/vol:h-1.5 transition-all overflow-hidden">
+          {/* Desktop Controls */}
+          <div className="hidden sm:flex items-center gap-3">
+            {/* Equalizer Modal Trigger */}
+            {onOpenEQ && (
+              <button
+                type="button"
+                onClick={onOpenEQ}
+                className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.06] transition-all"
+                title="Buka Pengaturan Equalizer"
+              >
+                <span className="material-symbols-outlined text-[18px]">equalizer</span>
+              </button>
+            )}
+
+            {/* Volume Control */}
+            <div className="flex items-center gap-2.5 group/vol">
+              <button
+                type="button"
+                onClick={handleVolumeToggle}
+                className="text-white/45 hover:text-white transition-all flex items-center justify-center p-1 rounded-lg hover:bg-white/5 shrink-0"
+                title={isMuted ? 'Nyalakan Suara' : 'Bisukan'}
+              >
+                <span className="material-symbols-outlined text-[19px] leading-none block">
+                  {volume === 0 || isMuted ? 'volume_off' : volume < 0.4 ? 'volume_down' : 'volume_up'}
+                </span>
+              </button>
+
+              {/* Volume Slider with Full Drag Support */}
+              <div
+                ref={volumeBarRef}
+                onMouseDown={handleVolumeMouseDown}
+                className="relative w-20 sm:w-24 h-5 flex items-center cursor-pointer select-none"
+              >
+                <div className="h-1 w-full bg-white/15 rounded-full group-hover/vol:h-1.5 transition-all overflow-hidden">
+                  <div
+                    style={{ width: `${(isMuted ? 0 : volume) * 100}%` }}
+                    className="h-full bg-white group-hover/vol:bg-indigo-400 rounded-full transition-colors"
+                  />
+                </div>
                 <div
-                  style={{ width: `${(isMuted ? 0 : volume) * 100}%` }}
-                  className="h-full bg-white group-hover/vol:bg-indigo-400 rounded-full transition-colors"
+                  style={{ left: `${(isMuted ? 0 : volume) * 100}%` }}
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-md opacity-0 group-hover/vol:opacity-100 transition-opacity pointer-events-none"
                 />
               </div>
-              <div
-                style={{ left: `${(isMuted ? 0 : volume) * 100}%` }}
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-md opacity-0 group-hover/vol:opacity-100 transition-opacity pointer-events-none"
-              />
+
+              {/* Volume Percentage Number */}
+              <button
+                type="button"
+                onClick={() => {
+                  const current = Math.round((isMuted ? 0 : volume) * 100)
+                  if (current >= 100) {
+                    onVolumeChange?.(0.5)
+                  } else {
+                    setIsMuted(false)
+                    onVolumeChange?.(1)
+                  }
+                }}
+                title={Math.round((isMuted ? 0 : volume) * 100) >= 100 ? 'Klik untuk setel 50%' : 'Klik untuk setel 100%'}
+                className="text-[11px] font-mono text-white/50 hover:text-white group-hover/vol:text-white/90 w-9 text-right tabular-nums font-semibold select-none leading-none cursor-pointer transition-colors p-0.5 rounded hover:bg-white/10"
+              >
+                {Math.round((isMuted ? 0 : volume) * 100)}%
+              </button>
             </div>
-
-            {/* Volume Percentage Number (Clickable to jump between 100% & 50%) */}
-            <button
-              type="button"
-              onClick={() => {
-                const current = Math.round((isMuted ? 0 : volume) * 100)
-                if (current >= 100) {
-                  onVolumeChange?.(0.5)
-                } else {
-                  setIsMuted(false)
-                  onVolumeChange?.(1)
-                }
-              }}
-              title={Math.round((isMuted ? 0 : volume) * 100) >= 100 ? 'Klik untuk setel 50%' : 'Klik untuk setel 100%'}
-              className="text-[11px] font-mono text-white/50 hover:text-white group-hover/vol:text-white/90 w-9 text-right tabular-nums font-semibold select-none leading-none cursor-pointer transition-colors p-0.5 rounded hover:bg-white/10"
-            >
-              {Math.round((isMuted ? 0 : volume) * 100)}%
-            </button>
           </div>
-        </div>
-
-        {/* Mobile Volume Toggle */}
-        <div className="flex sm:hidden items-center">
-          <button
-            type="button"
-            onClick={handleVolumeToggle}
-            className="text-white/50 hover:text-white transition-all p-1"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              {volume === 0 || isMuted ? 'volume_off' : 'volume_up'}
-            </span>
-          </button>
         </div>
       </div>
     </footer>
