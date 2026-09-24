@@ -33,27 +33,49 @@ function cleanArtist(artist = '') {
 }
 
 /**
+ * Universal safe fetch with strict timeout to avoid infinite loading spinners
+ */
+async function fetchWithTimeout(url, timeoutMs = 3500) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    clearTimeout(timer)
+    return res
+  } catch (e) {
+    clearTimeout(timer)
+    return null
+  }
+}
+
+/**
  * Universal safe fetch for LRCLIB without forbidden headers (crucial for iOS Safari)
  */
 async function fetchFromLrclib(endpoint) {
   // 1. Try same-origin proxy first (/api/lrclib/...)
-  try {
-    const proxyRes = await fetch(`/api/lrclib/${endpoint}`)
+  const proxyRes = await fetchWithTimeout(`/api/lrclib/${endpoint}`, 3000)
+  if (proxyRes) {
     if (proxyRes.ok) {
-      return await proxyRes.json()
+      try {
+        return await proxyRes.json()
+      } catch (err) {
+        return null
+      }
     }
-  } catch (err) {
-    // Continue to direct fallback
+    // If the proxy explicitly returned 404, LRCLIB does not have this resource
+    if (proxyRes.status === 404) {
+      return null
+    }
   }
 
-  // 2. Direct fallback to lrclib.net without any custom headers
-  try {
-    const directRes = await fetch(`${LRCLIB_FALLBACK_BASE}/${endpoint}`)
-    if (directRes.ok) {
+  // 2. Direct fallback to lrclib.net ONLY if proxy was unreachable or network error
+  const directRes = await fetchWithTimeout(`${LRCLIB_FALLBACK_BASE}/${endpoint}`, 3000)
+  if (directRes && directRes.ok) {
+    try {
       return await directRes.json()
+    } catch (err) {
+      return null
     }
-  } catch (err) {
-    // Network error or blocked
   }
 
   return null
@@ -86,7 +108,7 @@ export function parseLrc(lrcText = '') {
 }
 
 /**
- * Fetch lyrics from LRCLIB with iOS Safari compatibility & multi-stage fallbacks
+ * Fetch lyrics from LRCLIB with iOS Safari compatibility, fast timeouts & negative caching
  * @param {string} artist
  * @param {string} title
  * @param {number} [duration]
@@ -98,17 +120,21 @@ export async function getLyrics(artist = '', title = '', duration = 0) {
     return null
   }
 
-  const cacheKey = `${artist.toLowerCase()}:::${title.toLowerCase()}`
+  const primaryTitle = title.trim()
+  const primaryArtist = artist.trim()
+  const cacheKey = `${primaryArtist.toLowerCase()}:::${primaryTitle.toLowerCase()}`
+
+  // Check cache first (includes null cache to avoid re-fetching unavailable tracks)
   if (lyricsCache.has(cacheKey)) {
     return lyricsCache.get(cacheKey)
   }
 
-  const primaryTitle = title.trim()
-  const primaryArtist = artist.trim()
+  const cTitle = cleanTitle(primaryTitle)
+  const cArtist = cleanArtist(primaryArtist)
 
-  // 1. Try exact match first without duration (avoids 404 from small duration discrepancies)
+  // Stage 1: Try exact match with cleaned title & artist
   const exactData = await fetchFromLrclib(
-    `get?artist_name=${encodeURIComponent(primaryArtist)}&track_name=${encodeURIComponent(primaryTitle)}`
+    `get?artist_name=${encodeURIComponent(cArtist || primaryArtist)}&track_name=${encodeURIComponent(cTitle || primaryTitle)}`
   )
   if (exactData) {
     const result = formatLyricsData(exactData)
@@ -118,27 +144,10 @@ export async function getLyrics(artist = '', title = '', duration = 0) {
     }
   }
 
-  // 2. Try cleaned title / artist match
-  const cTitle = cleanTitle(primaryTitle)
-  const cArtist = cleanArtist(primaryArtist)
-  if (cTitle !== primaryTitle || cArtist !== primaryArtist) {
-    const cleanData = await fetchFromLrclib(
-      `get?artist_name=${encodeURIComponent(cArtist)}&track_name=${encodeURIComponent(cTitle)}`
-    )
-    if (cleanData) {
-      const result = formatLyricsData(cleanData)
-      if (result) {
-        lyricsCache.set(cacheKey, result)
-        return result
-      }
-    }
-  }
-
-  // 3. Fallback to broad search (q=title artist)
-  const query = `${cTitle} ${cArtist}`.trim()
+  // Stage 2: One fast broad search fallback if exact match wasn't found
+  const query = `${cTitle || primaryTitle} ${cArtist || primaryArtist}`.trim()
   const searchResults = await fetchFromLrclib(`search?q=${encodeURIComponent(query)}`)
   if (Array.isArray(searchResults) && searchResults.length > 0) {
-    // Pick candidate with syncedLyrics first, then plainLyrics
     const best =
       searchResults.find((item) => item.syncedLyrics) ||
       searchResults.find((item) => item.plainLyrics) ||
@@ -150,23 +159,8 @@ export async function getLyrics(artist = '', title = '', duration = 0) {
     }
   }
 
-  // 4. Fallback search just with title if multi-artist or unusual format
-  if (cTitle.length >= 3) {
-    const titleOnlyResults = await fetchFromLrclib(`search?q=${encodeURIComponent(cTitle)}`)
-    if (Array.isArray(titleOnlyResults) && titleOnlyResults.length > 0) {
-      const best =
-        titleOnlyResults.find((item) => item.syncedLyrics) ||
-        titleOnlyResults.find((item) => item.plainLyrics)
-      if (best) {
-        const result = formatLyricsData(best)
-        if (result) {
-          lyricsCache.set(cacheKey, result)
-          return result
-        }
-      }
-    }
-  }
-
+  // Cache null so this track doesn't cause repeated network requests
+  lyricsCache.set(cacheKey, null)
   return null
 }
 
