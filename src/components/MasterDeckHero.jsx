@@ -36,6 +36,28 @@ export default function MasterDeckHero({
   const lyricsContainerRef = useRef(null)
   const activeLineRef = useRef(null)
 
+  // Mobile Swipe-Down to Dismiss Handlers
+  const touchStartY = useRef(0)
+  const touchDeltaY = useRef(0)
+
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY
+    touchDeltaY.current = 0
+  }
+
+  const handleTouchMove = (e) => {
+    const currentY = e.touches[0].clientY
+    touchDeltaY.current = currentY - touchStartY.current
+  }
+
+  const handleTouchEnd = () => {
+    if (touchDeltaY.current > 70) {
+      setMobileOverlay(null)
+    }
+    touchStartY.current = 0
+    touchDeltaY.current = 0
+  }
+
   // Switch mobile view to queue when favorites filter changes
   useEffect(() => {
     if (isFavoritesFilterActive) {
@@ -834,29 +856,43 @@ export default function MasterDeckHero({
             </div>
           )}
 
-          {/* 2. OVERLAY: ANTREAN & FAVORIT (Sleek Full-Bleet Sheet - Spotify/Apple Music Grade) */}
+          {/* 2. OVERLAY: ANTREAN & FAVORIT (Sleek Full-Bleed Sheet - z-[100]) */}
           {mobileOverlay === 'queue' && (
-            <div className="fixed inset-0 z-50 flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
-              {/* Top Drag Handle Indicator */}
-              <div className="w-12 h-1 rounded-full bg-white/20 mx-auto mt-3 mb-1 shrink-0" />
+            <div className="fixed inset-0 z-[100] flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
+              {/* Top Drag Handle Indicator with Touch Swipe */}
+              <div
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className="w-full flex flex-col items-center pt-3 pb-1 cursor-grab active:cursor-grabbing select-none shrink-0"
+              >
+                <div className="w-12 h-1.5 rounded-full bg-white/30" />
+                <span className="text-[10px] text-white/50 font-mono mt-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
+                  <span>Tarik ke bawah atau tekan kembali</span>
+                </span>
+              </div>
 
-              {/* Sheet Header */}
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
-                    <span className="material-symbols-outlined text-[20px]">queue_music</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-white tracking-tight">Daftar Putar</h3>
-                      <span className="text-[10px] font-mono text-zinc-300 font-bold bg-white/[0.08] px-2 py-0.5 rounded-full border border-white/10">
-                        {tracks.length}
-                      </span>
-                    </div>
-                  </div>
+              {/* Sheet Header with Prominent Back Button */}
+              <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.08] shrink-0 bg-[#0c0a1f]">
+                <button
+                  type="button"
+                  onClick={() => setMobileOverlay(null)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white active:scale-95 transition-all text-xs font-semibold cursor-pointer border border-white/10"
+                  title="Kembali ke Pemutar"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                  <span>Kembali</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white tracking-tight">Daftar Putar</h3>
+                  <span className="text-[10px] font-mono text-zinc-300 font-bold bg-white/[0.08] px-2 py-0.5 rounded-full border border-white/10">
+                    {tracks.length}
+                  </span>
                 </div>
 
-                {/* Clean Circular Close Button */}
+                {/* Circular Close Button */}
                 <button
                   type="button"
                   onClick={() => setMobileOverlay(null)}
@@ -904,7 +940,17 @@ export default function MasterDeckHero({
               </div>
 
               {/* Scrollable Tracklist (Borderless, Clean, Spotify Rows) */}
-              <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-1 space-y-1 pb-28">
+              <div
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={(e) => {
+                  if (e.currentTarget.scrollTop <= 5 && touchDeltaY.current > 70) {
+                    setMobileOverlay(null)
+                  }
+                  handleTouchEnd()
+                }}
+                className="flex-1 overflow-y-auto no-scrollbar px-3 py-1 space-y-1 pb-28"
+              >
                 {isFavoritesFilterActive && tracks.length === 0 ? (
                   <div className="py-20 px-4 text-center rounded-2xl bg-white/[0.02] border border-dashed border-white/10 flex flex-col items-center justify-center my-4">
                     <span className="material-symbols-outlined text-[36px] text-rose-400/50 mb-2">favorite</span>
@@ -982,24 +1028,40 @@ export default function MasterDeckHero({
             </div>
           )}
 
-          {/* 3. OVERLAY: LIRIK KARAOKE (Sleek Full-Bleed Karaoke Sheet) */}
+          {/* 3. OVERLAY: LIRIK KARAOKE (Sleek Full-Bleed Karaoke Sheet - z-[100]) */}
           {mobileOverlay === 'lyrics' && (
-            <div className="fixed inset-0 z-50 flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
-              {/* Top Drag Handle Indicator */}
-              <div className="w-12 h-1 rounded-full bg-white/20 mx-auto mt-3 mb-1 shrink-0" />
+            <div className="fixed inset-0 z-[100] flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
+              {/* Top Drag Handle Indicator with Touch Swipe */}
+              <div
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className="w-full flex flex-col items-center pt-3 pb-1 cursor-grab active:cursor-grabbing select-none shrink-0"
+              >
+                <div className="w-12 h-1.5 rounded-full bg-white/30" />
+                <span className="text-[10px] text-white/50 font-mono mt-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
+                  <span>Tarik ke bawah atau tekan kembali</span>
+                </span>
+              </div>
 
-              {/* Sheet Header */}
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
-                    <span className="material-symbols-outlined text-[20px]">lyrics</span>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white tracking-tight">
-                      {lyricsData?.isSynced ? 'Karaoke Live Synced' : 'Lirik Studio'}
-                    </h3>
-                    <span className="text-[10px] font-mono text-indigo-300/60 uppercase">LRCLIB STUDIO</span>
-                  </div>
+              {/* Sheet Header with Prominent Back Button */}
+              <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.08] shrink-0 bg-[#0c0a1f]">
+                <button
+                  type="button"
+                  onClick={() => setMobileOverlay(null)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white active:scale-95 transition-all text-xs font-semibold cursor-pointer border border-white/10"
+                  title="Kembali ke Pemutar Lagu"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                  <span>Kembali</span>
+                </button>
+
+                <div className="flex flex-col items-center text-center">
+                  <h3 className="text-xs font-bold text-white tracking-tight">
+                    {lyricsData?.isSynced ? 'Karaoke Live Synced' : 'Lirik Lagu'}
+                  </h3>
+                  <span className="text-[10px] font-mono text-indigo-300/80 uppercase">LRCLIB STUDIO</span>
                 </div>
 
                 {/* Clean Circular Close Button */}
@@ -1032,10 +1094,18 @@ export default function MasterDeckHero({
                 </div>
               </div>
 
-              {/* Scrollable Lyrics */}
+              {/* Scrollable Lyrics Container with Pull-Down to Close */}
               <div
                 ref={lyricsContainerRef}
-                className="flex-1 overflow-y-auto no-scrollbar scroll-smooth px-6 py-6 space-y-5 select-text pb-28 [mask-image:linear-gradient(to_bottom,transparent_0%,black_8%,black_90%,transparent_100%)]"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={(e) => {
+                  if (lyricsContainerRef.current?.scrollTop <= 5 && touchDeltaY.current > 70) {
+                    setMobileOverlay(null)
+                  }
+                  handleTouchEnd()
+                }}
+                className="flex-1 overflow-y-auto no-scrollbar scroll-smooth px-6 py-6 space-y-5 select-text pb-32 [mask-image:linear-gradient(to_bottom,transparent_0%,black_8%,black_90%,transparent_100%)]"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {loadingLyrics ? (
@@ -1074,6 +1144,18 @@ export default function MasterDeckHero({
                     </span>
                   </div>
                 )}
+              </div>
+
+              {/* Bottom Floating Quick Exit Button for Effortless Mobile Navigation */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={() => setMobileOverlay(null)}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-xs shadow-[0_8px_25px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.5)] active:scale-95 transition-all border border-indigo-400/40 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+                  <span>Tutup Lirik & Kembali</span>
+                </button>
               </div>
             </div>
           )}
