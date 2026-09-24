@@ -6,6 +6,10 @@
       "destination": "https://api.deezer.com/$1"
     },
     {
+      "source": "/api/lrclib/(.*)",
+      "destination": "https://lrclib.net/api/$1"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

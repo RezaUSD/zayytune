@@ -71,6 +71,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/deezer/, ''),
       },
+      '/api/lrclib': {
+        target: 'https://lrclib.net/api',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/lrclib/, ''),
+      },
     },
   },
 })
