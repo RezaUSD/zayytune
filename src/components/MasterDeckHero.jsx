@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { getLyrics } from '../services/lyricsApi'
 import { LISTENING_MODES } from '../hooks/useAudioModes'
 
@@ -26,6 +27,7 @@ export default function MasterDeckHero({
   onToggleRpm,
   isFavoritesFilterActive = false,
   onToggleFavoritesFilter,
+  onMobileOverlayChange,
   favoritesCount = 0,
 }) {
   const [isCueDown, setIsCueDown] = useState(true)
@@ -35,6 +37,11 @@ export default function MasterDeckHero({
   const [mobileOverlay, setMobileOverlay] = useState(null) // null | 'queue' | 'lyrics'
   const lyricsContainerRef = useRef(null)
   const activeLineRef = useRef(null)
+
+  // Notify parent component whenever overlay opens/closes
+  useEffect(() => {
+    onMobileOverlayChange?.(Boolean(mobileOverlay))
+  }, [mobileOverlay, onMobileOverlayChange])
 
   // Mobile Swipe-Down to Dismiss Handlers
   const touchStartY = useRef(0)
@@ -856,9 +863,9 @@ export default function MasterDeckHero({
             </div>
           )}
 
-          {/* 2. OVERLAY: ANTREAN & FAVORIT (Sleek Full-Bleed Sheet - z-[100]) */}
-          {mobileOverlay === 'queue' && (
-            <div className="fixed inset-0 z-[100] flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
+          {/* 2. OVERLAY: ANTREAN & FAVORIT (Sleek Full-Bleed Sheet via Portal - z-[9999]) */}
+          {mobileOverlay === 'queue' && typeof document !== 'undefined' && createPortal(
+            <div className="fixed inset-0 z-[9999] flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
               {/* Top Drag Handle Indicator with Touch Swipe */}
               <div
                 onTouchStart={handleTouchStart}
@@ -1025,12 +1032,13 @@ export default function MasterDeckHero({
                   })
                 )}
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
-          {/* 3. OVERLAY: LIRIK KARAOKE (Sleek Full-Bleed Karaoke Sheet - z-[100]) */}
-          {mobileOverlay === 'lyrics' && (
-            <div className="fixed inset-0 z-[100] flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
+          {/* 3. OVERLAY: LIRIK KARAOKE (Sleek Full-Bleed Karaoke Sheet via Portal - z-[9999]) */}
+          {mobileOverlay === 'lyrics' && typeof document !== 'undefined' && createPortal(
+            <div className="fixed inset-0 z-[9999] flex flex-col bg-[#0c0a1f] animate-in slide-in-from-bottom-5 duration-200">
               {/* Top Drag Handle Indicator with Touch Swipe */}
               <div
                 onTouchStart={handleTouchStart}
@@ -1157,7 +1165,8 @@ export default function MasterDeckHero({
                   <span>Tutup Lirik & Kembali</span>
                 </button>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
 

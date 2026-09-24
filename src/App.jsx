@@ -39,6 +39,7 @@ export default function App() {
   const [activeRailView, setActiveRailView] = useState('master-console')
   const [activeBottomNav, setActiveBottomNav] = useState('home')
   const [isFavoritesFilterActive, setIsFavoritesFilterActive] = useState(false)
+  const [isMobileOverlayOpen, setIsMobileOverlayOpen] = useState(false)
 
   // Audio Playback State
   const { tracks: moodTracks, status: tracksStatus } = useJamendoByTag(mood)
@@ -442,6 +443,7 @@ export default function App() {
           isFavoritesActive={isFavoritesFilterActive}
           onToggleFavorites={() => setIsFavoritesFilterActive(!isFavoritesFilterActive)}
           favoritesCount={favoriteTracks.length}
+          hiddenOnMobile={isMobileOverlayOpen}
         />
 
         {/* Main Canvas with Responsive Turntable Deck (Fluid Scroll on Mobile, Centered Fixed on Desktop) */}
@@ -464,6 +466,7 @@ export default function App() {
             onSelectTrack={playTrack}
             isFavoritesFilterActive={isFavoritesFilterActive}
             onToggleFavoritesFilter={(active) => setIsFavoritesFilterActive(typeof active === 'boolean' ? active : !isFavoritesFilterActive)}
+            onMobileOverlayChange={setIsMobileOverlayOpen}
             favoritesCount={favoriteTracks.length}
             isShuffle={isShuffle}
             onToggleShuffle={() => {

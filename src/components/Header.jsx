@@ -6,6 +6,7 @@ export default function Header({
   isFavoritesActive = false,
   onToggleFavorites,
   favoritesCount = 0,
+  hiddenOnMobile = false,
 }) {
   // Listen for Ctrl+K / Cmd+K / Slash to open search
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function Header({
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#0c0a1f]/90 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.7)] border-b border-indigo-500/15 transition-colors duration-500">
+    <header className={`fixed top-0 left-0 right-0 z-50 bg-[#0c0a1f]/90 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.7)] border-b border-indigo-500/15 transition-all duration-300 ${hiddenOnMobile ? 'hidden sm:block' : ''}`}>
       {/* Dynamic top ambient glow accent line */}
       <div
         className="absolute top-0 left-0 right-0 h-[1.5px] opacity-85 transition-all duration-700 pointer-events-none"
