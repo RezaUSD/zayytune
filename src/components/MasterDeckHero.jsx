@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { getLyrics } from '../services/lyricsApi'
+import { getActiveLyricIndex, adjustTrackOffset, saveTrackOffset, DEFAULT_LYRIC_OFFSET } from '../services/lyricsHelper'
+import { useLyricOffset } from '../hooks/useLyricOffset'
 import { LISTENING_MODES } from '../hooks/useAudioModes'
+import { DEFAULT_FALLBACK_COVER, getAestheticFallback } from '../services/imageHelper'
 
 export default function MasterDeckHero({
   mood,
@@ -29,6 +32,7 @@ export default function MasterDeckHero({
   onToggleFavoritesFilter,
   onMobileOverlayChange,
   favoritesCount = 0,
+  onOpenNowPlaying,
 }) {
   const [isCueDown, setIsCueDown] = useState(true)
   const [showLyrics, setShowLyrics] = useState(false)
@@ -99,19 +103,15 @@ export default function MasterDeckHero({
     return () => {
       isMounted = false
     }
-  }, [currentTrack?.id, currentTrack?.title, currentTrack?.artist])
+  }, [currentTrack?.id, currentTrack?.title, currentTrack?.artist, currentTrack?.duration])
+
+  const lyricOffset = useLyricOffset(currentTrack)
 
   // Calculate active line index in synced lyrics
   const activeLineIdx = useMemo(() => {
     if (!lyricsData?.lines || lyricsData.lines.length === 0) return -1
-    const lines = lyricsData.lines
-    for (let i = lines.length - 1; i >= 0; i--) {
-      if (currentTime >= lines[i].time) {
-        return i
-      }
-    }
-    return 0
-  }, [lyricsData, currentTime])
+    return getActiveLyricIndex(lyricsData.lines, currentTime, lyricOffset)
+  }, [lyricsData, currentTime, lyricOffset])
 
   // Auto-scroll active lyric into view
   useEffect(() => {
@@ -198,15 +198,12 @@ export default function MasterDeckHero({
           {/* Center Paper Label */}
           <div className="absolute inset-[35%] rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.8)] overflow-hidden flex items-center justify-center border-2 border-[#ffb3b1]/40">
             <img
-              src={
-                currentTrack?.coverArtUrl ||
-                'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80'
-              }
+              src={currentTrack?.coverArtUrl || DEFAULT_FALLBACK_COVER}
               alt={currentTrack?.title || 'Turntable'}
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.currentTarget.onerror = null
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80'
+                e.currentTarget.src = getAestheticFallback(currentTrack?.title || 'Turntable')
               }}
             />
             {/* Center Label Overlay Info Ring */}
@@ -618,15 +615,46 @@ export default function MasterDeckHero({
                         {lyricsData?.isSynced ? 'LIVE SYNCED KARAOKE' : 'STUDIO LYRICS'}
                       </span>
                     </div>
-                    <button
-                      onClick={() => setShowLyrics(false)}
-                      type="button"
-                      className="text-white/50 hover:text-white text-[10px] font-mono uppercase tracking-wider flex items-center gap-1 transition-colors px-2 py-0.5 rounded-full hover:bg-white/10"
-                      title="Tutup lirik"
-                    >
-                      <span>Tutup</span>
-                      <span className="material-symbols-outlined text-[13px]">close</span>
-                    </button>
+
+                    <div className="flex items-center gap-1.5">
+                      {lyricsData?.isSynced && (
+                        <div className="flex items-center bg-white/[0.08] hover:bg-white/[0.12] rounded-lg px-1.5 py-0.5 border border-white/10 text-[9px] font-mono text-white/70">
+                          <button
+                            type="button"
+                            onClick={() => adjustTrackOffset(currentTrack?.id || currentTrack?.videoId, -0.5)}
+                            className="px-1 hover:text-white active:scale-95 transition-all text-white/60 hover:bg-white/10 rounded"
+                            title="Mundurkan lirik 0.5s"
+                          >
+                            -0.5s
+                          </button>
+                          <span
+                            onClick={() => saveTrackOffset(currentTrack?.id || currentTrack?.videoId, DEFAULT_LYRIC_OFFSET)}
+                            className={`px-1 font-bold cursor-pointer hover:underline ${lyricOffset !== 0 ? 'text-amber-300' : 'text-indigo-300'}`}
+                            title="Klik untuk reset kalibrasi"
+                          >
+                            {lyricOffset !== 0 ? `${lyricOffset > 0 ? '+' : ''}${lyricOffset.toFixed(1)}s` : 'Sync'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => adjustTrackOffset(currentTrack?.id || currentTrack?.videoId, +0.5)}
+                            className="px-1 hover:text-white active:scale-95 transition-all text-white/60 hover:bg-white/10 rounded"
+                            title="Percepat lirik 0.5s"
+                          >
+                            +0.5s
+                          </button>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => setShowLyrics(false)}
+                        type="button"
+                        className="text-white/50 hover:text-white text-[10px] font-mono uppercase tracking-wider flex items-center gap-1 transition-colors px-2 py-0.5 rounded-full hover:bg-white/10"
+                        title="Tutup lirik"
+                      >
+                        <span>Tutup</span>
+                        <span className="material-symbols-outlined text-[13px]">close</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div
@@ -840,12 +868,23 @@ export default function MasterDeckHero({
                 </div>
               </div>
 
-              {/* Quick Action Navigation Pills (Antrean & Lirik) */}
-              <div className="w-full flex items-center justify-center gap-3 pt-2">
+              {/* Quick Action Navigation Pills (Buka Pemutar, Antrean, Lirik) */}
+              <div className="w-full flex items-center justify-center gap-2 pt-2">
+                {onOpenNowPlaying && (
+                  <button
+                    type="button"
+                    onClick={onOpenNowPlaying}
+                    className="flex-1 py-2 px-3 rounded-full bg-white text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[17px]">album</span>
+                    <span>Pemutar</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setMobileOverlay('queue')}
-                  className="flex-1 max-w-[170px] py-2 px-4 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/12 text-xs font-semibold text-white/90 hover:text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm cursor-pointer"
+                  className="flex-1 py-2 px-3 rounded-full bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-xs font-semibold text-white/90 hover:text-white flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[17px] text-indigo-300">queue_music</span>
                   <span>Antrean ({tracks.length})</span>
@@ -854,11 +893,117 @@ export default function MasterDeckHero({
                 <button
                   type="button"
                   onClick={() => setMobileOverlay('lyrics')}
-                  className="flex-1 max-w-[170px] py-2 px-4 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/12 text-xs font-semibold text-white/90 hover:text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm cursor-pointer"
+                  className="flex-1 py-2 px-3 rounded-full bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-xs font-semibold text-white/90 hover:text-white flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[17px] text-indigo-300">lyrics</span>
-                  <span>Lirik Lagu</span>
+                  <span>Lirik</span>
                 </button>
+              </div>
+
+              {/* Spotify-Style Inline Mobile Tracklist */}
+              <div className="w-full pt-4 space-y-2">
+                <div className="flex items-center justify-between px-1 pb-1 border-b border-white/[0.08]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white tracking-tight">
+                      {isFavoritesFilterActive ? 'Koleksi Favorit' : 'Top Hits 2026'}
+                    </span>
+                    <span className="text-[10px] font-mono text-zinc-400 bg-white/[0.08] px-2 py-0.5 rounded-full border border-white/10 font-bold">
+                      {tracks.length}
+                    </span>
+                  </div>
+                  {isFavoritesFilterActive && (
+                    <button
+                      type="button"
+                      onClick={() => onToggleFavoritesFilter?.(false)}
+                      className="text-[11px] text-indigo-300 hover:text-white font-medium cursor-pointer"
+                    >
+                      Kembali ke Top Hits
+                    </button>
+                  )}
+                </div>
+
+                {isFavoritesFilterActive && tracks.length === 0 ? (
+                  <div className="py-10 px-4 text-center rounded-2xl bg-white/[0.02] border border-dashed border-white/10 flex flex-col items-center justify-center">
+                    <span className="material-symbols-outlined text-[32px] text-rose-400/50 mb-1.5">
+                      favorite
+                    </span>
+                    <span className="text-xs text-white/90 font-semibold">Belum ada lagu favorit</span>
+                    <p className="text-[11px] text-white/40 max-w-xs mt-1 leading-relaxed">
+                      Ketuk ikon hati (❤️) pada lagu untuk menyimpannya ke koleksi ini.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {tracks.map((track, idx) => {
+                      if (!track) return null
+                      const isActive = currentTrack?.id === track.id
+                      return (
+                        <div
+                          key={track.id || idx}
+                          onClick={() => onSelectTrack?.(track)}
+                          className={`flex items-center justify-between py-2 px-2.5 rounded-xl transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-white/[0.12] text-white shadow-sm border border-indigo-400/30'
+                              : 'hover:bg-white/[0.04] text-zinc-300 active:bg-white/[0.06]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                            <div className="relative w-11 h-11 rounded-lg overflow-hidden bg-black/40 shrink-0 border border-white/10 flex items-center justify-center">
+                              <img
+                                src={track.coverArtUrl || DEFAULT_FALLBACK_COVER}
+                                alt={track.title}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null
+                                  e.currentTarget.src = getAestheticFallback(track.title)
+                                }}
+                              />
+                              {isActive && isPlaying && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                  <div className="flex items-end gap-0.5 h-3">
+                                    <span className="w-0.5 h-full bg-indigo-400 animate-pulse rounded-full" />
+                                    <span className="w-0.5 h-2/3 bg-indigo-300 animate-pulse delay-75 rounded-full" />
+                                    <span className="w-0.5 h-4/5 bg-indigo-400 animate-pulse delay-150 rounded-full" />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span
+                                className={`text-xs font-semibold truncate ${
+                                  isActive ? 'text-indigo-300 font-bold' : 'text-white'
+                                }`}
+                              >
+                                {track.title}
+                              </span>
+                              <span className="text-[10px] text-zinc-400 truncate mt-0.5">
+                                {track.artist}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className={`font-mono text-[11px] ${
+                                isActive ? 'text-indigo-300 font-bold' : 'text-zinc-500'
+                              }`}
+                            >
+                              {track.durationFormatted || '03:45'}
+                            </span>
+                            <span
+                              className={`material-symbols-outlined text-[18px] ${
+                                isActive ? 'text-indigo-400' : 'text-white/20'
+                              }`}
+                            >
+                              {isActive && isPlaying ? 'pause_circle' : 'play_circle'}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -981,13 +1126,13 @@ export default function MasterDeckHero({
                           {/* Cover Art Thumbnail with Guaranteed Fallback */}
                           <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-black/40 shrink-0 border border-white/10 flex items-center justify-center shadow-sm">
                             <img
-                              src={track.coverArtUrl || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'}
+                              src={track.coverArtUrl || DEFAULT_FALLBACK_COVER}
                               alt={track.title}
                               className="w-full h-full object-cover"
                               loading="lazy"
                               onError={(e) => {
                                 e.currentTarget.onerror = null
-                                e.currentTarget.src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'
+                                e.currentTarget.src = getAestheticFallback(track.title)
                               }}
                             />
                             {isActive && isPlaying && (
@@ -1059,12 +1204,12 @@ export default function MasterDeckHero({
                 <div className="flex items-center gap-2.5 min-w-0 max-w-[65%] px-2">
                   <div className="w-8 h-8 rounded-lg overflow-hidden bg-black/40 border border-white/10 shrink-0 shadow-sm">
                     <img
-                      src={currentTrack?.coverArtUrl || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'}
+                      src={currentTrack?.coverArtUrl || DEFAULT_FALLBACK_COVER}
                       alt={currentTrack?.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.currentTarget.onerror = null
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'
+                        e.currentTarget.src = getAestheticFallback(currentTrack?.title)
                       }}
                     />
                   </div>
@@ -1078,15 +1223,45 @@ export default function MasterDeckHero({
                   </div>
                 </div>
 
-                {/* Right: Close (X) Button */}
-                <button
-                  type="button"
-                  onClick={() => setMobileOverlay(null)}
-                  className="w-9 h-9 rounded-full bg-white/[0.08] active:bg-white/[0.18] text-white/70 active:text-white flex items-center justify-center transition-all active:scale-90 cursor-pointer border border-white/10 shrink-0"
-                  title="Tutup lirik"
-                >
-                  <span className="material-symbols-outlined text-[18px]">close</span>
-                </button>
+                {/* Right: Calibration & Close (X) Button */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {lyricsData?.isSynced && (
+                    <div className="flex items-center bg-white/[0.08] active:bg-white/[0.18] rounded-full px-2 py-1 border border-white/10 text-[11px] font-mono text-white/70">
+                      <button
+                        type="button"
+                        onClick={() => adjustTrackOffset(currentTrack?.id || currentTrack?.videoId, -0.5)}
+                        className="px-1.5 py-0.5 hover:text-white active:scale-95 text-white/70 rounded"
+                        title="Mundurkan lirik 0.5s"
+                      >
+                        -0.5s
+                      </button>
+                      <span
+                        onClick={() => saveTrackOffset(currentTrack?.id || currentTrack?.videoId, DEFAULT_LYRIC_OFFSET)}
+                        className={`px-1 font-bold ${lyricOffset !== 0 ? 'text-amber-300' : 'text-indigo-300'}`}
+                        title="Reset kalibrasi"
+                      >
+                        {lyricOffset !== 0 ? `${lyricOffset > 0 ? '+' : ''}${lyricOffset.toFixed(1)}s` : 'Sync'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => adjustTrackOffset(currentTrack?.id || currentTrack?.videoId, +0.5)}
+                        className="px-1.5 py-0.5 hover:text-white active:scale-95 text-white/70 rounded"
+                        title="Percepat lirik 0.5s"
+                      >
+                        +0.5s
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setMobileOverlay(null)}
+                    className="w-9 h-9 rounded-full bg-white/[0.08] active:bg-white/[0.18] text-white/70 active:text-white flex items-center justify-center transition-all active:scale-90 cursor-pointer border border-white/10 shrink-0"
+                    title="Tutup lirik"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">close</span>
+                  </button>
+                </div>
               </div>
 
               {/* Scrollable Lyrics Container with Pull-Down to Close */}

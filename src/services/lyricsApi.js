@@ -122,7 +122,8 @@ export async function getLyrics(artist = '', title = '', duration = 0) {
 
   const primaryTitle = title.trim()
   const primaryArtist = artist.trim()
-  const cacheKey = `${primaryArtist.toLowerCase()}:::${primaryTitle.toLowerCase()}`
+  const dur = Math.round(Number(duration) || 0)
+  const cacheKey = `${primaryArtist.toLowerCase()}:::${primaryTitle.toLowerCase()}:::${dur}`
 
   // Check cache first (includes null cache to avoid re-fetching unavailable tracks)
   if (lyricsCache.has(cacheKey)) {
@@ -131,27 +132,28 @@ export async function getLyrics(artist = '', title = '', duration = 0) {
 
   const cTitle = cleanTitle(primaryTitle)
   const cArtist = cleanArtist(primaryArtist)
+  const baseGet = `get?artist_name=${encodeURIComponent(cArtist || primaryArtist)}&track_name=${encodeURIComponent(cTitle || primaryTitle)}`
 
-  // Stage 1: Try exact match with cleaned title & artist
-  const exactData = await fetchFromLrclib(
-    `get?artist_name=${encodeURIComponent(cArtist || primaryArtist)}&track_name=${encodeURIComponent(cTitle || primaryTitle)}`
-  )
-  if (exactData) {
-    const result = formatLyricsData(exactData)
-    if (result) {
-      lyricsCache.set(cacheKey, result)
-      return result
+  // Stage 1: Exact match WITH duration (LRCLIB matches ±2s → same studio version as Spotify)
+  // Stage 1b: Exact match without duration only if version duration is unknown/compatible
+  const getAttempts = dur > 30 ? [`${baseGet}&duration=${dur}`, baseGet] : [baseGet]
+  for (const endpoint of getAttempts) {
+    const exactData = await fetchFromLrclib(endpoint)
+    if (exactData && isDurationCompatible(exactData.duration, dur)) {
+      const result = formatLyricsData(exactData)
+      if (result) {
+        lyricsCache.set(cacheKey, result)
+        return result
+      }
     }
   }
 
-  // Stage 2: One fast broad search fallback if exact match wasn't found
-  const query = `${cTitle || primaryTitle} ${cArtist || primaryArtist}`.trim()
-  const searchResults = await fetchFromLrclib(`search?q=${encodeURIComponent(query)}`)
+  // Stage 2: Search, then rank by duration closeness + synced availability + name match
+  const searchResults = await fetchFromLrclib(
+    `search?track_name=${encodeURIComponent(cTitle || primaryTitle)}&artist_name=${encodeURIComponent(cArtist || primaryArtist)}`
+  )
   if (Array.isArray(searchResults) && searchResults.length > 0) {
-    const best =
-      searchResults.find((item) => item.syncedLyrics) ||
-      searchResults.find((item) => item.plainLyrics) ||
-      searchResults[0]
+    const best = pickBestMatch(searchResults, cTitle || primaryTitle, cArtist || primaryArtist, dur)
     const result = formatLyricsData(best)
     if (result) {
       lyricsCache.set(cacheKey, result)
@@ -162,6 +164,50 @@ export async function getLyrics(artist = '', title = '', duration = 0) {
   // Cache null so this track doesn't cause repeated network requests
   lyricsCache.set(cacheKey, null)
   return null
+}
+
+const DURATION_TOLERANCE = 4 // seconds
+
+function isDurationCompatible(lyricDur, trackDur) {
+  if (!trackDur || trackDur <= 30 || !lyricDur) return true
+  return Math.abs(lyricDur - trackDur) <= DURATION_TOLERANCE
+}
+
+function normalize(s = '') {
+  return s.toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+}
+
+/** Rank LRCLIB results: same version (duration) > synced > name similarity. */
+function pickBestMatch(results, title, artist, dur) {
+  const nt = normalize(title)
+  const na = normalize(artist)
+  let best = null
+  let bestScore = -Infinity
+  for (const item of results) {
+    if (item.instrumental) continue
+    let score = 0
+    const it = normalize(item.trackName)
+    const ia = normalize(item.artistName)
+    if (it === nt) score += 60
+    else if (it.includes(nt) || nt.includes(it)) score += 30
+    if (ia === na) score += 40
+    else if (ia.includes(na) || na.includes(ia)) score += 20
+    if (item.syncedLyrics) score += 30
+    if (dur > 30 && item.duration) {
+      const diff = Math.abs(item.duration - dur)
+      score += diff <= 2 ? 100 : diff <= DURATION_TOLERANCE ? 60 : -diff * 3
+    }
+    if (score > bestScore) {
+      bestScore = score
+      best = item
+    }
+  }
+  if (!best) return null
+  // Different-length version → timestamps would drift; keep text only
+  if (!isDurationCompatible(best.duration, dur)) {
+    return { ...best, syncedLyrics: '' }
+  }
+  return best
 }
 
 function formatLyricsData(data) {
@@ -176,6 +222,7 @@ function formatLyricsData(data) {
     id: data.id,
     trackName: data.trackName,
     artistName: data.artistName,
+    duration: data.duration || 0,
     plainLyrics,
     syncedLyrics,
     lines,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { searchDeezerTracks } from '../services/deezerApi'
 import { searchYouTubeMusic } from '../services/youtubeSearch'
+import { getTrackCover, handleImageFallback } from '../services/imageHelper'
 
 export default function SearchPanel({
   isOpen,
@@ -162,10 +163,12 @@ export default function SearchPanel({
                 {/* Album Cover Thumbnail */}
                 <div className="relative w-10 h-10 rounded-lg bg-black border border-white/10 overflow-hidden flex-shrink-0 shadow-sm">
                   <img
-                    src={track.coverArtUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120'}
+                    src={getTrackCover(track)}
                     alt={track.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                     loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => handleImageFallback(e, track)}
                   />
                   {/* Play Overlay */}
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors flex items-center justify-center">

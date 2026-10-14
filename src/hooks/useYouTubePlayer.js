@@ -41,20 +41,20 @@ export function useYouTubePlayer({ onEnded, onError } = {}) {
     if (!container) {
       container = document.createElement('div')
       container.id = 'timbre-yt-iframe-container'
-      container.style.position = 'fixed'
-      container.style.bottom = '-9999px'
-      container.style.right = '-9999px'
-      container.style.width = '200px'
-      container.style.height = '200px'
-      container.style.opacity = '0.01'
-      container.style.pointerEvents = 'none'
-      container.style.zIndex = '-9999'
       document.body.appendChild(container)
     }
+    container.style.position = 'fixed'
+    container.style.bottom = '0'
+    container.style.right = '0'
+    container.style.width = '200px'
+    container.style.height = '150px'
+    container.style.opacity = '0.001'
+    container.style.pointerEvents = 'none'
+    container.style.zIndex = '-1'
 
     try {
       playerRef.current = new window.YT.Player('timbre-yt-iframe-container', {
-        height: '200',
+        height: '150',
         width: '200',
         playerVars: {
           autoplay: 1,
@@ -152,6 +152,9 @@ export function useYouTubePlayer({ onEnded, onError } = {}) {
 
     try {
       playerRef.current.loadVideoById(videoId)
+      if (typeof playerRef.current.unMute === 'function') {
+        playerRef.current.unMute()
+      }
       playerRef.current.playVideo()
       setIsPlaying(true)
     } catch (err) {
@@ -171,6 +174,9 @@ export function useYouTubePlayer({ onEnded, onError } = {}) {
   const resume = useCallback(() => {
     try {
       if (playerRef.current && isReadyRef.current && typeof playerRef.current.playVideo === 'function') {
+        if (typeof playerRef.current.unMute === 'function') {
+          playerRef.current.unMute()
+        }
         playerRef.current.playVideo()
         setIsPlaying(true)
       }
@@ -204,8 +210,10 @@ export function useYouTubePlayer({ onEnded, onError } = {}) {
 
   return {
     playVideo,
+    play: resume,
     pause,
     resume,
+    seek: seekTo,
     seekTo,
     setVolume,
     setPlaybackRate,

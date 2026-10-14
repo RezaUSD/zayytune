@@ -1,4 +1,5 @@
 import React from 'react'
+import { getTrackCover, handleImageFallback } from '../services/imageHelper'
 
 export default function PlaylistPanel({
   playlistTitle = 'Daftar Lagu Populer',
@@ -103,13 +104,12 @@ export default function PlaylistPanel({
                 <div className="col-span-11 sm:col-span-6 md:col-span-5 flex items-center gap-3.5 min-w-0">
                   <div className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 shadow-md border border-white/10 bg-black/40">
                     <img
-                      src={track.coverArtUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100'}
+                      src={getTrackCover(track)}
                       alt={track.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       loading="lazy"
-                      onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100'
-                      }}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleImageFallback(e, track)}
                     />
                     {isActive && (
                       <div className="absolute inset-0 bg-primary/20 pointer-events-none" />
