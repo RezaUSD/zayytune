@@ -93,6 +93,26 @@ export function PlayerProvider({ children }) {
   const failedVideoIdsRef = useRef(new Set())
   const fallbackAttemptsRef = useRef(0)
 
+  // Use stable refs for callbacks so useYouTubePlayer never reinitializes
+  const onEndedRef = useRef(null)
+  const onErrorRef = useRef(null)
+
+  // Stable callback wrappers — these refs are updated each render but the
+  // functions passed to useYouTubePlayer never change identity
+  const stableOnEnded = useCallback(() => {
+    if (onEndedRef.current) onEndedRef.current()
+  }, [])
+
+  const stableOnError = useCallback((err) => {
+    if (onErrorRef.current) onErrorRef.current(err)
+  }, [])
+
+  const ytPlayer = useYouTubePlayer({
+    onEnded: stableOnEnded,
+    onError: stableOnError,
+  })
+  ytPlayerRef.current = ytPlayer
+
   // Fallback otomatis: video dihapus (100), privat (2/5), atau embed diblokir pemilik (101/150)
   const handleYouTubeError = useCallback(async (err) => {
     const track = currentTrackRef.current
@@ -121,12 +141,6 @@ export function PlayerProvider({ children }) {
     }
   }, [])
 
-  const ytPlayer = useYouTubePlayer({
-    onEnded: () => handleTrackEnded(),
-    onError: handleYouTubeError,
-  })
-  ytPlayerRef.current = ytPlayer
-
   // Sync YouTube player time when active
   useEffect(() => {
     if (currentTrack?.videoId) {
@@ -138,42 +152,63 @@ export function PlayerProvider({ children }) {
     }
   }, [ytPlayer.isPlaying, ytPlayer.currentTime, ytPlayer.duration, currentTrack?.videoId])
 
-  // Sync listening mode DSP / playback rate with YouTube and HTML5 player
+  // Sync listening mode DSP / playback rate
+  // NOTE: ytPlayerRef.current used intentionally to avoid ytPlayer object as dep
   useEffect(() => {
     const mode = LISTENING_MODES.find((m) => m.id === activeListeningModeId)
     const targetRate = mode?.rate || 1.0
+    const ytRates = [0.5, 0.75, 1, 1.25, 1.5, 2]
+    const closestYtRate = ytRates.reduce((prev, curr) =>
+      Math.abs(curr - targetRate) < Math.abs(prev - targetRate) ? curr : prev
+    )
 
-    // 1. YouTube Player
-    if (ytPlayer && typeof ytPlayer.setPlaybackRate === 'function') {
-      const ytRates = [0.5, 0.75, 1, 1.25, 1.5, 2]
-      const closestYtRate = ytRates.reduce((prev, curr) =>
-        Math.abs(curr - targetRate) < Math.abs(prev - targetRate) ? curr : prev
-      )
-      ytPlayer.setPlaybackRate(closestYtRate)
-    }
+    // Apply to YouTube via ref (stable, not reactive)
+    try {
+      ytPlayerRef.current?.setPlaybackRate(closestYtRate)
+    } catch (e) {}
 
-    // 2. HTML5 Audio fallback
+    // Apply to HTML5 Audio
     if (audioRef.current) {
       try {
         audioRef.current.playbackRate = targetRate
       } catch (e) {}
     }
-  }, [activeListeningModeId, ytPlayer, currentTrack])
+  }, [activeListeningModeId])
 
-  // Track Ended Handler
+  // Use refs so handleTrackEnded always sees latest state without stale closure
+  const isRepeatRef = useRef(isRepeat)
+  const isShuffle_Ref = useRef(isShuffle)
+  const queueRef = useRef(queue)
+  const queueIndexRef = useRef(queueIndex)
+  useEffect(() => { isRepeatRef.current = isRepeat }, [isRepeat])
+  useEffect(() => { isShuffle_Ref.current = isShuffle }, [isShuffle])
+  useEffect(() => { queueRef.current = queue }, [queue])
+  useEffect(() => { queueIndexRef.current = queueIndex }, [queueIndex])
+
+  // Ref to nextTrack so handleTrackEnded can call it without stale closure
+  const nextTrackRef = useRef(null)
+
+  // Track Ended Handler — uses refs to always have fresh state
   const handleTrackEnded = useCallback(() => {
-    if (isRepeat) {
-      if (currentTrack?.videoId) {
-        ytPlayer.seek(0)
-        ytPlayer.play()
+    if (isRepeatRef.current) {
+      if (currentTrackRef.current?.videoId) {
+        ytPlayerRef.current?.seek(0)
+        ytPlayerRef.current?.play()
       } else if (audioRef.current) {
         audioRef.current.currentTime = 0
         audioRef.current.play().catch(() => {})
       }
       return
     }
-    nextTrack()
-  }, [isRepeat, currentTrack, queue, queueIndex, isShuffle])
+    // nextTrack via ref to avoid stale closure
+    nextTrackRef.current?.()
+  }, [])
+
+  // Wire up the stable refs each render
+  useEffect(() => {
+    onEndedRef.current = handleTrackEnded
+    onErrorRef.current = handleYouTubeError
+  })
 
   // Play track with optional queue
   const playTrack = useCallback(
@@ -287,23 +322,29 @@ export function PlayerProvider({ children }) {
     }
   }, [currentTrack, isPlaying, queue, ytPlayer, playTrack])
 
-  // Next Track
+  // Next Track — reads from refs so it can be called from handleTrackEnded safely
   const nextTrack = useCallback(() => {
-    if (queue.length === 0) return
+    const q = queueRef.current
+    const qi = queueIndexRef.current
+    const shuffle = isShuffle_Ref.current
+    if (q.length === 0) return
 
-    let nextIdx = queueIndex + 1
-    if (isShuffle && queue.length > 1) {
-      nextIdx = Math.floor(Math.random() * queue.length)
-      if (nextIdx === queueIndex) {
-        nextIdx = (nextIdx + 1) % queue.length
+    let nextIdx = qi + 1
+    if (shuffle && q.length > 1) {
+      nextIdx = Math.floor(Math.random() * q.length)
+      if (nextIdx === qi) {
+        nextIdx = (nextIdx + 1) % q.length
       }
-    } else if (nextIdx >= queue.length) {
+    } else if (nextIdx >= q.length) {
       nextIdx = 0
     }
 
     setQueueIndex(nextIdx)
-    playTrack(queue[nextIdx])
-  }, [queue, queueIndex, isShuffle, playTrack])
+    playTrack(q[nextIdx])
+  }, [playTrack])
+
+  // Keep nextTrackRef in sync
+  useEffect(() => { nextTrackRef.current = nextTrack }, [nextTrack])
 
   // Previous Track
   const prevTrack = useCallback(() => {

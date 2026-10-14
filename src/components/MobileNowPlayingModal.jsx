@@ -122,8 +122,18 @@ export default function MobileNowPlayingModal({
   const handleProgressClick = (e) => {
     if (!progressBarRef.current || !onSeek) return
     const rect = progressBarRef.current.getBoundingClientRect()
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientX = e.clientX
     const clickX = clientX - rect.left
+    const percent = Math.min(1, Math.max(0, clickX / rect.width))
+    onSeek(percent * effectiveDuration)
+  }
+
+  const handleProgressTouchEnd = (e) => {
+    if (!progressBarRef.current || !onSeek) return
+    const touch = e.changedTouches?.[0]
+    if (!touch) return
+    const rect = progressBarRef.current.getBoundingClientRect()
+    const clickX = touch.clientX - rect.left
     const percent = Math.min(1, Math.max(0, clickX / rect.width))
     onSeek(percent * effectiveDuration)
   }
@@ -244,7 +254,7 @@ export default function MobileNowPlayingModal({
           <div
             ref={progressBarRef}
             onClick={handleProgressClick}
-            onTouchStart={handleProgressClick}
+            onTouchEnd={handleProgressTouchEnd}
             className="relative w-full h-6 flex items-center cursor-pointer group"
           >
             <div className="h-2 w-full bg-[#141416]/10 border border-[#141416]/20 rounded-full overflow-hidden">
